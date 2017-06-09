@@ -1,0 +1,4 @@
+package: github.com/RussellLuo/ratelimiter
+import: []
+testImport:
+- package: github.com/go-redis/redis

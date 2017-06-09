@@ -1,0 +1,93 @@
+package ratelimiter
+
+import (
+	"sync"
+	"time"
+)
+
+const lua = `
+local key = KEYS[1]
+local interval = tonumber(ARGV[1])
+local quantum = tonumber(ARGV[2])
+local capacity = tonumber(ARGV[3])
+local now = tonumber(ARGV[4])
+local count = tonumber(ARGV[5])
+
+local bucket = {tc=quantum, ts=now}
+local value = redis.call("get", key)
+if value then
+  bucket = cjson.decode(value)
+end
+
+local cycles = math.floor((now - bucket.ts) / interval)
+if cycles > 0 then
+  bucket.tc = math.min(bucket.tc + cycles * quantum, capacity)
+  bucket.ts = bucket.ts + cycles * interval
+end
+
+if bucket.tc >= count then
+  bucket.tc = bucket.tc - count
+  if redis.call("set", key, cjson.encode(bucket)) then
+    return 1
+  end
+end
+
+return 0
+`
+
+type Redis interface {
+	Eval(script string, keys []string, args ...interface{}) (interface{}, error)
+}
+
+type Bucket struct {
+	Interval time.Duration
+	Quantum  int64
+	Capacity int64
+}
+
+type RateLimiter struct {
+	redis Redis
+	key   string
+
+	mu     sync.RWMutex
+	bucket *Bucket
+}
+
+func New(redis Redis, key string, bucket *Bucket) *RateLimiter {
+	return &RateLimiter{
+		redis:  redis,
+		key:    key,
+		bucket: bucket,
+	}
+}
+
+func (rl *RateLimiter) SetBucket(bucket *Bucket) {
+	rl.mu.Lock()
+	rl.bucket = bucket
+	rl.mu.Unlock()
+}
+
+// Take takes count tokens from the bucket stored at rl.key in Redis.
+func (rl *RateLimiter) Take(count int64) (bool, error) {
+	rl.mu.RLock()
+	interval := rl.bucket.Interval
+	quantum := rl.bucket.Quantum
+	capacity := rl.bucket.Capacity
+	rl.mu.RUnlock()
+
+	now := time.Now().Unix()
+	status, err := rl.redis.Eval(
+		lua,
+		[]string{rl.key},
+		int64(interval/time.Second),
+		quantum,
+		capacity,
+		now,
+		count,
+	)
+	if err != nil {
+		return false, err
+	} else {
+		return status == int64(1), nil
+	}
+}
