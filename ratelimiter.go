@@ -70,18 +70,16 @@ func (rl *RateLimiter) SetBucket(bucket *Bucket) {
 // Take takes count tokens from the bucket stored at rl.key in Redis.
 func (rl *RateLimiter) Take(count int64) (bool, error) {
 	rl.mu.RLock()
-	interval := rl.bucket.Interval
-	quantum := rl.bucket.Quantum
-	capacity := rl.bucket.Capacity
+	bucket := *rl.bucket
 	rl.mu.RUnlock()
 
 	now := time.Now().Unix()
 	status, err := rl.redis.Eval(
 		lua,
 		[]string{rl.key},
-		int64(interval/time.Second),
-		quantum,
-		capacity,
+		int64(bucket.Interval/time.Second),
+		bucket.Quantum,
+		bucket.Capacity,
 		now,
 		count,
 	)
