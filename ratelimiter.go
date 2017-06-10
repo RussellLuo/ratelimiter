@@ -40,9 +40,9 @@ type Redis interface {
 }
 
 type Bucket struct {
-	Interval time.Duration  // the fixed time duration between each addition
-	Quantum  int64  // the number of tokens will be added in the interval
-	Capacity int64  // the depth of the bucket
+	Interval time.Duration // the fixed time duration between each addition
+	Quantum  int64         // the number of tokens will be added in the interval
+	Capacity int64         // the depth of the bucket
 }
 
 type RateLimiter struct {
