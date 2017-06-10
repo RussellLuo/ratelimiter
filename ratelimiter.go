@@ -40,9 +40,9 @@ type Redis interface {
 }
 
 type Bucket struct {
-	Interval time.Duration
-	Quantum  int64
-	Capacity int64
+	Interval time.Duration  // the fixed time duration between each addition
+	Quantum  int64  // the number of tokens will be added in the interval
+	Capacity int64  // the depth of the bucket
 }
 
 type RateLimiter struct {
@@ -53,6 +53,8 @@ type RateLimiter struct {
 	bucket *Bucket
 }
 
+// New returns a new rate limiter special for key in redis
+// with the specified bucket configuration.
 func New(redis Redis, key string, bucket *Bucket) *RateLimiter {
 	return &RateLimiter{
 		redis:  redis,
@@ -61,6 +63,7 @@ func New(redis Redis, key string, bucket *Bucket) *RateLimiter {
 	}
 }
 
+// SetBucket updates the bucket configuration.
 func (rl *RateLimiter) SetBucket(bucket *Bucket) {
 	rl.mu.Lock()
 	rl.bucket = bucket
