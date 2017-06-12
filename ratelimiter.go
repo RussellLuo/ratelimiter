@@ -35,10 +35,6 @@ end
 return 0
 `
 
-type Redis interface {
-	Eval(script string, keys []string, args ...interface{}) (interface{}, error)
-}
-
 type Bucket struct {
 	Interval time.Duration // the fixed time duration between each addition
 	Quantum  int64         // the number of tokens will be added in the interval
@@ -46,8 +42,8 @@ type Bucket struct {
 }
 
 type RateLimiter struct {
-	redis Redis
-	key   string
+	script *Script
+	key    string
 
 	mu     sync.RWMutex
 	bucket *Bucket
@@ -55,9 +51,9 @@ type RateLimiter struct {
 
 // New returns a new rate limiter special for key in redis
 // with the specified bucket configuration.
-func New(redis Redis, key string, bucket *Bucket) *RateLimiter {
+func NewRateLimiter(redis Redis, key string, bucket *Bucket) *RateLimiter {
 	return &RateLimiter{
-		redis:  redis,
+		script: NewScript(redis, lua),
 		key:    key,
 		bucket: bucket,
 	}
@@ -77,8 +73,7 @@ func (rl *RateLimiter) Take(count int64) (bool, error) {
 	rl.mu.RUnlock()
 
 	now := time.Now().Unix()
-	status, err := rl.redis.Eval(
-		lua,
+	result, err := rl.script.Run(
 		[]string{rl.key},
 		int64(bucket.Interval/time.Second),
 		bucket.Quantum,
@@ -89,6 +84,6 @@ func (rl *RateLimiter) Take(count int64) (bool, error) {
 	if err != nil {
 		return false, err
 	} else {
-		return status == int64(1), nil
+		return result == int64(1), nil
 	}
 }
