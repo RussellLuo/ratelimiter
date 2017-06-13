@@ -8,19 +8,19 @@ import (
 	"github.com/go-redis/redis"
 )
 
-func BenchmarkRateLimiter_Take(b *testing.B) {
-	rl := ratelimiter.NewRateLimiter(
+func BenchmarkTokenBucket_Take(b *testing.B) {
+	tb := ratelimiter.NewTokenBucket(
 		&Redis{redis.NewClient(&redis.Options{
 			Addr: "localhost:6379",
 		})},
-		"ratelimiter:benchmark",
-		&ratelimiter.Bucket{
+		"ratelimiter:tokenbucket:benchmark",
+		&ratelimiter.Config{
 			Interval: 1 * time.Second,
 			Quantum:  2,
 			Capacity: 10,
 		},
 	)
 	for i := 0; i < b.N; i++ {
-		rl.Take(1)
+		tb.Take(1)
 	}
 }

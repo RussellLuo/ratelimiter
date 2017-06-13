@@ -23,19 +23,19 @@ func (r *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) (interf
 	return result, err, noScript
 }
 
-func Example() {
-	rl := ratelimiter.NewRateLimiter(
+func ExampleTokenBucket_Take() {
+	tb := ratelimiter.NewTokenBucket(
 		&Redis{redis.NewClient(&redis.Options{
 			Addr: "localhost:6379",
 		})},
-		"ratelimiter:example",
-		&ratelimiter.Bucket{
+		"ratelimiter:tokenbucket:example",
+		&ratelimiter.Config{
 			Interval: 1 * time.Second,
 			Quantum:  2,
 			Capacity: 10,
 		},
 	)
-	if ok, err := rl.Take(1); ok {
+	if ok, err := tb.Take(1); ok {
 		fmt.Println("PASS")
 	} else {
 		if err != nil {
