@@ -17,7 +17,6 @@ func (r *Redis) Eval(script string, keys []string, args ...interface{}) (interfa
 	return r.client.Eval(script, keys, args...).Result()
 }
 
-
 func (r *Redis) EvalSha(sha1 string, keys []string, args ...interface{}) (interface{}, error, bool) {
 	result, err := r.client.EvalSha(sha1, keys, args...).Result()
 	noScript := err != nil && strings.HasPrefix(err.Error(), "NOSCRIPT ")
