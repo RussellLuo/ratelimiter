@@ -46,3 +46,27 @@ func ExampleTokenBucket_Take() {
 	// Output:
 	// PASS
 }
+
+func ExampleLeakyBucket_Give() {
+	rl := ratelimiter.NewLeakyBucket(
+		&Redis{redis.NewClient(&redis.Options{
+			Addr: "localhost:6379",
+		})},
+		"ratelimiter:leakybucket:example",
+		&ratelimiter.Config{
+			Interval: 1 * time.Second,
+			Quantum:  2,
+			Capacity: 10,
+		},
+	)
+	if ok, err := rl.Give(1); ok {
+		fmt.Println("PASS")
+	} else {
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println("DROP")
+	}
+	// Output:
+	// PASS
+}
