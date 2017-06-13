@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkLeakyBucket_Give(b *testing.B) {
-	tb := ratelimiter.NewLeakyBucket(
+	lb := ratelimiter.NewLeakyBucket(
 		&Redis{redis.NewClient(&redis.Options{
 			Addr: "localhost:6379",
 		})},
@@ -21,6 +21,6 @@ func BenchmarkLeakyBucket_Give(b *testing.B) {
 		},
 	)
 	for i := 0; i < b.N; i++ {
-		tb.Give(1)
+		lb.Give(1)
 	}
 }
