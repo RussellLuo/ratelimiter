@@ -57,12 +57,12 @@ func NewLeakyBucket(redis Redis, key string, config *Config) *LeakyBucket {
 }
 
 // Give gives count amount of water into the bucket stored at lb.key in Redis.
-func (lb *LeakyBucket) Give(count int64) (bool, error) {
-	config := lb.Config()
+func (b *LeakyBucket) Give(count int64) (bool, error) {
+	config := b.Config()
 
 	now := time.Now().Unix()
-	result, err := lb.script.Run(
-		[]string{lb.key},
+	result, err := b.script.Run(
+		[]string{b.key},
 		int64(config.Interval/time.Second),
 		config.Quantum,
 		config.Capacity,

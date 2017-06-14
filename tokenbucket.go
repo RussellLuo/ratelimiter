@@ -57,12 +57,12 @@ func NewTokenBucket(redis Redis, key string, config *Config) *TokenBucket {
 }
 
 // Take takes count tokens from the bucket stored at tb.key in Redis.
-func (tb *TokenBucket) Take(count int64) (bool, error) {
-	config := tb.Config()
+func (b *TokenBucket) Take(count int64) (bool, error) {
+	config := b.Config()
 
 	now := time.Now().Unix()
-	result, err := tb.script.Run(
-		[]string{tb.key},
+	result, err := b.script.Run(
+		[]string{b.key},
 		int64(config.Interval/time.Second),
 		config.Quantum,
 		config.Capacity,

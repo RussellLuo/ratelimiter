@@ -31,16 +31,16 @@ type baseBucket struct {
 }
 
 // Config returns the bucket configuration in a concurrency-safe way.
-func (lb *baseBucket) Config() Config {
-	lb.mu.RLock()
-	config := *lb.config
-	lb.mu.RUnlock()
+func (b *baseBucket) Config() Config {
+	b.mu.RLock()
+	config := *b.config
+	b.mu.RUnlock()
 	return config
 }
 
 // SetConfig updates the bucket configuration in a concurrency-safe way.
-func (lb *baseBucket) SetConfig(config *Config) {
-	lb.mu.Lock()
-	lb.config = config
-	lb.mu.Unlock()
+func (b *baseBucket) SetConfig(config *Config) {
+	b.mu.Lock()
+	b.config = config
+	b.mu.Unlock()
 }
