@@ -40,7 +40,7 @@ return 0
 // LeakyBucket implements the Leaky Bucket Algorithm as a meter.
 // See https://en.wikipedia.org/wiki/Leaky_bucket#The_Leaky_Bucket_Algorithm_as_a_Meter.
 type LeakyBucket struct {
-	BaseBucket
+	baseBucket
 
 	script *Script
 	key    string
@@ -50,7 +50,7 @@ type LeakyBucket struct {
 // with the specified bucket configuration.
 func NewLeakyBucket(redis Redis, key string, config *Config) *LeakyBucket {
 	return &LeakyBucket{
-		BaseBucket: BaseBucket{config: config},
+		baseBucket: baseBucket{config: config},
 		script:     NewScript(redis, luaLeakyBucket),
 		key:        key,
 	}

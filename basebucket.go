@@ -24,14 +24,14 @@ type Config struct {
 	Capacity int64
 }
 
-// BaseBucket is a basic structure both for TokenBucket and LeakyBucket.
-type BaseBucket struct {
+// baseBucket is a basic structure both for TokenBucket and LeakyBucket.
+type baseBucket struct {
 	mu     sync.RWMutex
 	config *Config
 }
 
 // Config returns the bucket configuration in a concurrency-safe way.
-func (lb *BaseBucket) Config() Config {
+func (lb *baseBucket) Config() Config {
 	lb.mu.RLock()
 	config := *lb.config
 	lb.mu.RUnlock()
@@ -39,7 +39,7 @@ func (lb *BaseBucket) Config() Config {
 }
 
 // SetConfig updates the bucket configuration in a concurrency-safe way.
-func (lb *BaseBucket) SetConfig(config *Config) {
+func (lb *baseBucket) SetConfig(config *Config) {
 	lb.mu.Lock()
 	lb.config = config
 	lb.mu.Unlock()

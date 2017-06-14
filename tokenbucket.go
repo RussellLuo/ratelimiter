@@ -40,7 +40,7 @@ return 0
 // TokenBucket implements the Token Bucket Algorithm.
 // See https://en.wikipedia.org/wiki/Token_bucket.
 type TokenBucket struct {
-	BaseBucket
+	baseBucket
 
 	script *Script
 	key    string
@@ -50,7 +50,7 @@ type TokenBucket struct {
 // with the specified bucket configuration.
 func NewTokenBucket(redis Redis, key string, config *Config) *TokenBucket {
 	return &TokenBucket{
-		BaseBucket: BaseBucket{config: config},
+		baseBucket: baseBucket{config: config},
 		script:     NewScript(redis, luaTokenBucket),
 		key:        key,
 	}
