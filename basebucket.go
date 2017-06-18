@@ -9,13 +9,13 @@ import (
 // Both the leaky and token bucket algorithms share the same bucket configuration.
 type Config struct {
 	// Token bucket:
-	//     the fixed time duration between each addition
+	//     the interval between each addition of one token
 	// Leaky bucket:
 	//     the fixed time duration between each leak
 	Interval time.Duration
 
 	// Token bucket:
-	//     the number of tokens added in the interval
+	//     not used any more
 	// Leaky bucket:
 	//     the amount of water leaks in the interval
 	Quantum int64

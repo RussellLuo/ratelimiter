@@ -30,8 +30,7 @@ func ExampleTokenBucket_Take() {
 		})},
 		"ratelimiter:tokenbucket:example",
 		&ratelimiter.Config{
-			Interval: 1 * time.Second,
-			Quantum:  2,
+			Interval: 1 * time.Second / 2,
 			Capacity: 10,
 		},
 	)

@@ -10,25 +10,25 @@ import (
 const luaTokenBucket = `
 local key = KEYS[1]
 local interval = tonumber(ARGV[1])
-local quantum = tonumber(ARGV[2])
-local capacity = tonumber(ARGV[3])
-local now = tonumber(ARGV[4])
-local count = tonumber(ARGV[5])
+local capacity = tonumber(ARGV[2])
+local now = tonumber(ARGV[3])
+local amount = tonumber(ARGV[4])
 
-local bucket = {tc=quantum, ts=now}
+local bucket = {tc=capacity, ts=now}
 local value = redis.call("get", key)
 if value then
   bucket = cjson.decode(value)
 end
 
-local cycles = math.floor((now - bucket.ts) / interval)
-if cycles > 0 then
-  bucket.tc = math.min(bucket.tc + cycles * quantum, capacity)
-  bucket.ts = bucket.ts + cycles * interval
+local added = math.floor((now - bucket.ts) / interval)
+if added > 0 then
+  bucket.tc = math.min(bucket.tc + added, capacity)
+  bucket.ts = bucket.ts + added * interval
 end
 
-if bucket.tc >= count then
-  bucket.tc = bucket.tc - count
+if bucket.tc >= amount then
+  bucket.tc = bucket.tc - amount
+  bucket.ts = string.format("%.f", bucket.ts)
   if redis.call("set", key, cjson.encode(bucket)) then
     return 1
   end
@@ -46,7 +46,7 @@ type TokenBucket struct {
 	key    string
 }
 
-// New returns a new token-bucket rate limiter special for key in redis
+// NewTokenBucket returns a new token-bucket rate limiter special for key in redis
 // with the specified bucket configuration.
 func NewTokenBucket(redis Redis, key string, config *Config) *TokenBucket {
 	return &TokenBucket{
@@ -56,18 +56,20 @@ func NewTokenBucket(redis Redis, key string, config *Config) *TokenBucket {
 	}
 }
 
-// Take takes count tokens from the bucket stored at tb.key in Redis.
-func (b *TokenBucket) Take(count int64) (bool, error) {
+// Take takes amount tokens from the bucket.
+func (b *TokenBucket) Take(amount int64) (bool, error) {
 	config := b.Config()
+	if amount > config.Capacity {
+		return false, nil
+	}
 
-	now := time.Now().Unix()
+	now := time.Now().UnixNano()
 	result, err := b.script.Run(
 		[]string{b.key},
-		int64(config.Interval/time.Second),
-		config.Quantum,
+		int64(config.Interval/time.Microsecond),
 		config.Capacity,
-		now,
-		count,
+		int64(time.Duration(now)/time.Microsecond),
+		amount,
 	)
 	if err != nil {
 		return false, err
