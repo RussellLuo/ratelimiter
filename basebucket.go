@@ -11,14 +11,8 @@ type Config struct {
 	// Token bucket:
 	//     the interval between each addition of one token
 	// Leaky bucket:
-	//     the fixed time duration between each leak
+	//     the interval between each leak of one unit of water
 	Interval time.Duration
-
-	// Token bucket:
-	//     not used any more
-	// Leaky bucket:
-	//     the amount of water leaks in the interval
-	Quantum int64
 
 	// the capacity of the bucket
 	Capacity int64

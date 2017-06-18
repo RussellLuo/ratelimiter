@@ -15,9 +15,8 @@ func BenchmarkLeakyBucket_Give(b *testing.B) {
 		})},
 		"ratelimiter:tokenbucket:benchmark",
 		&ratelimiter.Config{
-			Interval: 1 * time.Second,
-			Quantum:  2,
-			Capacity: 10,
+			Interval: 1 * time.Second / 2,
+			Capacity: 5,
 		},
 	)
 	for i := 0; i < b.N; i++ {

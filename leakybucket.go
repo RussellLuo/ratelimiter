@@ -10,31 +10,32 @@ import (
 const luaLeakyBucket = `
 local key = KEYS[1]
 local interval = tonumber(ARGV[1])
-local quantum = tonumber(ARGV[2])
-local capacity = tonumber(ARGV[3])
-local now = tonumber(ARGV[4])
-local count = tonumber(ARGV[5])
+local capacity = tonumber(ARGV[2])
+local now = tonumber(ARGV[3])
+local amount = tonumber(ARGV[4])
 
-local bucket = {wl=capacity - quantum, ts=now}
+local bucket = {wl=0, ts=now}
 local value = redis.call("get", key)
 if value then
   bucket = cjson.decode(value)
 end
 
-local cycles = math.floor((now - bucket.ts) / interval)
-if cycles > 0 then
-  bucket.wl = math.max(bucket.wl - cycles * quantum, 0)
-  bucket.ts = bucket.ts + cycles * interval
+local leaks = math.floor((now - bucket.ts) / interval)
+if leaks > 0 then
+  bucket.wl = math.max(bucket.wl - leaks, 0)
+  bucket.ts = bucket.ts + leaks * interval
 end
 
-if bucket.wl + count <= capacity then
-  bucket.wl = bucket.wl + count
+if bucket.wl + amount <= capacity then
+  local delayed = bucket.wl * interval
+  bucket.wl = bucket.wl + amount
+  bucket.ts = string.format("%.f", bucket.ts)
   if redis.call("set", key, cjson.encode(bucket)) then
-    return 1
+    return delayed
   end
 end
 
-return 0
+return -1
 `
 
 // LeakyBucket implements the Leaky Bucket Algorithm as a meter.
@@ -46,7 +47,7 @@ type LeakyBucket struct {
 	key    string
 }
 
-// New returns a new leaky-bucket rate limiter special for key in redis
+// NewLeakyBucket returns a new leaky-bucket rate limiter special for key in redis
 // with the specified bucket configuration.
 func NewLeakyBucket(redis Redis, key string, config *Config) *LeakyBucket {
 	return &LeakyBucket{
@@ -56,22 +57,29 @@ func NewLeakyBucket(redis Redis, key string, config *Config) *LeakyBucket {
 	}
 }
 
-// Give gives count amount of water into the bucket stored at lb.key in Redis.
-func (b *LeakyBucket) Give(count int64) (bool, error) {
+// Give gives amount units of water into the bucket.
+func (b *LeakyBucket) Give(amount int64) (bool, time.Duration, error) {
 	config := b.Config()
+	if amount > config.Capacity {
+		return false, -1, nil
+	}
 
-	now := time.Now().Unix()
+	now := time.Now().UnixNano()
 	result, err := b.script.Run(
 		[]string{b.key},
-		int64(config.Interval/time.Second),
-		config.Quantum,
+		int64(config.Interval/time.Microsecond),
 		config.Capacity,
-		now,
-		count,
+		int64(time.Duration(now)/time.Microsecond),
+		amount,
 	)
 	if err != nil {
-		return false, err
+		return false, -1, err
 	} else {
-		return result == int64(1), nil
+		switch delayed := result.(int64); delayed {
+		case -1:
+			return false, -1, nil
+		default:
+			return true, time.Duration(delayed) * time.Microsecond, nil
+		}
 	}
 }

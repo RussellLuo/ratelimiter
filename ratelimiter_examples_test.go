@@ -31,7 +31,7 @@ func ExampleTokenBucket_Take() {
 		"ratelimiter:tokenbucket:example",
 		&ratelimiter.Config{
 			Interval: 1 * time.Second / 2,
-			Capacity: 10,
+			Capacity: 5,
 		},
 	)
 	if ok, err := tb.Take(1); ok {
@@ -53,13 +53,16 @@ func ExampleLeakyBucket_Give() {
 		})},
 		"ratelimiter:leakybucket:example",
 		&ratelimiter.Config{
-			Interval: 1 * time.Second,
-			Quantum:  2,
-			Capacity: 10,
+			Interval: 1 * time.Second / 2,
+			Capacity: 5,
 		},
 	)
-	if ok, err := lb.Give(1); ok {
-		fmt.Println("PASS")
+	if ok, delayed, err := lb.Give(1); ok {
+		if delayed == 0 {
+			fmt.Println("PASS")
+		} else {
+			fmt.Println("DELAY")
+		}
 	} else {
 		if err != nil {
 			fmt.Println(err.Error())
