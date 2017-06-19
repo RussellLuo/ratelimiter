@@ -27,7 +27,7 @@ if leaks > 0 then
 end
 
 if bucket.wl + amount <= capacity then
-  local delayed = bucket.wl * interval
+  local delayed = math.max(bucket.wl * interval - (now - bucket.ts), 0)
   bucket.wl = bucket.wl + amount
   bucket.ts = string.format("%.f", bucket.ts)
   if redis.call("set", key, cjson.encode(bucket)) then
