@@ -72,3 +72,30 @@ func ExampleLeakyBucket_Give() {
 	// Output:
 	// PASS
 }
+
+func ExampleGCRA_Transmit() {
+	gcra := ratelimiter.NewGCRA(
+		&Redis{redis.NewClient(&redis.Options{
+			Addr: "localhost:6379",
+		})},
+		"ratelimiter:gcra:example",
+		&ratelimiter.Config{
+			Interval: 1 * time.Second / 2,
+			Capacity: 5,
+		},
+	)
+	if ok, delayed, err := gcra.Transmit(1); ok {
+		if delayed == 0 {
+			fmt.Println("PASS")
+		} else {
+			fmt.Println("DELAY")
+		}
+	} else {
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		fmt.Println("DROP")
+	}
+	// Output:
+	// PASS
+}
