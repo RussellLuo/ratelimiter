@@ -1,7 +1,6 @@
 package ratelimiter_test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -136,7 +135,7 @@ func TestTokenBucket_Take(t *testing.T) {
 	for _, c := range cases {
 		client.Del(key)
 		got := concurrentlyDo(f, c.in)
-		if !reflect.DeepEqual(got, c.want) {
+		if !deepEqual(got, c.want, false) {
 			t.Errorf("Got (%#v) != Want (%#v)", got, c.want)
 		}
 	}

@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const delayedError = 6 * time.Millisecond
+
 type Func func(int64) (bool, time.Duration, error)
 
 type arg struct {
@@ -54,7 +56,7 @@ func concurrentlyDo(f Func, args []arg) []result {
 	for i, c := range rvChans {
 		for rv := range c {
 			if rv.ok {
-				if rv.delayed == 0 {
+				if rv.delayed < delayedError {
 					result[i].Passed++
 				} else {
 					result[i].Delayed++
@@ -73,4 +75,22 @@ func concurrentlyDo(f Func, args []arg) []result {
 	}
 
 	return result
+}
+
+func deepEqual(got []result, want []result, careDelayed bool) bool {
+	for i, r := range got {
+		if !(r.Passed == want[i].Passed && r.Dropped == want[i].Dropped &&
+			r.Delayed == want[i].Delayed) {
+			return false
+		}
+		if careDelayed {
+			for j, d := range r.DelayDurations {
+				wantD := want[i].DelayDurations[j]
+				if !(d > wantD-delayedError && d < wantD+delayedError) {
+					return false
+				}
+			}
+		}
+	}
+	return true
 }

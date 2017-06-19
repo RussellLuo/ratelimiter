@@ -1,7 +1,6 @@
 package ratelimiter_test
 
 import (
-	"reflect"
 	"testing"
 	"time"
 
@@ -171,7 +170,7 @@ func TestLeakyBucket_Give(t *testing.T) {
 	for _, c := range cases {
 		client.Del(key)
 		got := concurrentlyDo(bucket.Give, c.in)
-		if !reflect.DeepEqual(got, c.want) {
+		if !deepEqual(got, c.want, true) {
 			t.Errorf("Got (%#v) != Want (%#v)", got, c.want)
 		}
 	}
